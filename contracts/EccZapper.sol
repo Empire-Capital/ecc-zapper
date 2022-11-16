@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPLv3                                                                                                                   
-pragma solidity 0.8.15;
+pragma solidity 0.8.17;
 
-// exclude EccZapper from fees on ECC.
+// exclude EccZapper from fees on ECC
 // take 50% EMPIRE, 50% ECC to make LP
 // send LP back to users
 
@@ -153,24 +153,7 @@ contract EccZapper is Ownable {
         );
         uint empireAmount = amounts2[1];
 
-        // // Create & Send LP
-        // createEccEmpire(eccAmount, empireAmount);
-
-        // // Refund remaining ECC or EMPIRE
-        // uint remainingECC = IERC20(ecc).balanceOf(address(this));
-        // uint remainingEmpire = IERC20(empire).balanceOf(address(this));
-        // if(remainingECC > 0) {
-        //     IERC20(ecc).transferFrom(address(this), msg.sender, remainingECC);
-        // }
-        // if(remainingEmpire > 0) {
-        //     IERC20(empire).transferFrom(address(this), msg.sender, remainingEmpire);
-        // }
-    }
-
-    function createEccEmpire(
-        uint eccAmount,
-        uint empireAmount
-    ) public {
+        // Create & Send LP
         ecc.approve(address(router), eccAmount);
         empire.approve(address(router), empireAmount);
         (uint _eccAdded, uint _empireAdded, uint _lpTokensCreated) = router.addLiquidity(
@@ -183,39 +166,17 @@ contract EccZapper is Ownable {
             msg.sender,
             block.timestamp + 10
         );
-
         emit eccEmpireLiquidityAdded(_lpTokensCreated, _eccAdded, _empireAdded);
+
+        // // Refund remaining ECC or EMPIRE
+        // uint remainingECC = ecc.balanceOf(address(this));
+        // uint remainingEmpire = empire.balanceOf(address(this));
+        // if(remainingECC > 0) {
+        //     ecc.transferFrom(address(this), msg.sender, remainingECC);
+        // }
+        // if(remainingEmpire > 0) {
+        //     empire.transferFrom(address(this), msg.sender, remainingEmpire);
+        // }
     }
-
-    // function createTokenLP(
-    //     address token1,
-    //     uint token1Amount,
-    //     address token2,
-    //     uint token2Amount
-    //     ) external returns(uint) {
-    //     (,,uint lpCreated) = router.addLiquidity(
-    //         token1,
-    //         token2,
-    //         token1Amount,
-    //         token2Amount,
-    //         0,
-    //         0,
-    //         msg.sender,
-    //         block.timestamp
-    //     );
-    //     return lpCreated;
-    // }
-
-    // function createETHLP(address token, uint tokenAmount) external payable returns(uint) {
-    //     (,,uint lpCreated) = router.addLiquidityETH(
-    //         token,
-    //         tokenAmount,
-    //         0,
-    //         0,
-    //         msg.sender,
-    //         block.timestamp
-    //     );
-    //     return lpCreated;
-    // }
 
 }
