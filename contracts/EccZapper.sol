@@ -107,7 +107,7 @@ contract Ownable is Context {
     @dev Creates LP tokens from native coin
 */
 contract EccZapper is Ownable {
-    IEmpireRouter private router;
+    IEmpireRouter public router;
     IERC20 public ecc;
     IERC20 public empire;
 
@@ -126,9 +126,8 @@ contract EccZapper is Ownable {
         uint ETHadded
     );
 
-    constructor (address eRouter) {
-        // router = IEmpireRouter(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-        router = IEmpireRouter(eRouter);
+    constructor (address router) {
+        router = IEmpireRouter(router);
         ecc = IERC20(0xfE06CCfAc526d141131c041fb443E5678D011c56);
         empire = IERC20(0x2a114dBd8C97dD3d369963790FBdf0eb74AFa95F);
     }
