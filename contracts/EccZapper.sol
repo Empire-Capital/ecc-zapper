@@ -26,8 +26,6 @@ interface IERC20 {
 }
 
 interface IEmpireRouter {
-    function factory() external pure returns (address);
-
     function WETH() external pure returns (address);
 
     function addLiquidity(
@@ -231,6 +229,45 @@ contract EccZapper is Ownable {
             address tokenB,
             uint _tokenAadded,
             uint _tokenBadded
+        );
+    }
+
+    function zapEthForEthPair(address token) external payable {
+        (bool sent,) = address(this).call{value: msg.value}("");
+        require(sent, "Failed to send Ether");
+
+        uint halfETH = address(this).balance/2;
+        address[] memory path = new address[](2);
+
+        // Swap 50% ETH for Token
+        path[0] = address(router.WETH());
+        path[1] = address(token);
+        uint[] memory amounts1 = router.swapExactETHForTokens{value: halfETH}(
+            0,
+            path,
+            address(this),
+            block.timestamp + 10
+        );
+        uint tokenAmount = amounts1[1];
+
+        // Create & Send LP
+        IERC20(token).approve(address(router), tokenAmount);
+        empire.approve(address(router), empireAmount);
+        (uint _tokenAmount, uint _ETHamount, uint _lpTokensCreated) = router.addLiquidity
+            {value: halfETH}(
+            token,
+            tokenAmount,
+            0,
+            0,
+            msg.sender,
+            block.timestamp + 10
+        );
+
+        emit ETHLiquidityAdded(
+            uint _lpTokensCreated,
+            address token,
+            uint _tokenAamount,
+            uint _ETHamount
         );
     }
 
