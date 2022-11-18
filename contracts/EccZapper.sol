@@ -106,7 +106,7 @@ contract Ownable is Context {
 /**
     @title EccZapper
     @author Empire Capital (Tranquil Flow)
-    @dev Creates ECC/EMPIRE LP and can be used for any other LP token
+    @dev Creates LP tokens from native coin
 */
 contract EccZapper is Ownable {
     IEmpireRouter private router;
@@ -114,6 +114,19 @@ contract EccZapper is Ownable {
     IERC20 public empire;
 
     event eccEmpireLiquidityAdded(uint lpTokensCreated, uint eccAdded, uint empireAdded);
+    event TokenLiquidityAdded(
+        uint lpTokensCreated,
+        address tokenA,
+        address tokenB,
+        uint tokenAadded,
+        uint tokenBadded
+    );
+    event ETHLiquidityAdded(
+        uint lpTokensCreated,
+        address token,
+        uint tokenAdded,
+        uint ETHadded
+    );
 
     constructor (address eRouter) {
         // router = IEmpireRouter(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
@@ -167,16 +180,58 @@ contract EccZapper is Ownable {
             block.timestamp + 10
         );
         emit eccEmpireLiquidityAdded(_lpTokensCreated, _eccAdded, _empireAdded);
+    }
 
-        // // Refund remaining ECC or EMPIRE
-        // uint remainingECC = ecc.balanceOf(address(this));
-        // uint remainingEmpire = empire.balanceOf(address(this));
-        // if(remainingECC > 0) {
-        //     ecc.transferFrom(address(this), msg.sender, remainingECC);
-        // }
-        // if(remainingEmpire > 0) {
-        //     empire.transferFrom(address(this), msg.sender, remainingEmpire);
-        // }
+    function zapEthForTokenPair(address tokenA, address tokenB) external payable {
+        (bool sent,) = address(this).call{value: msg.value}("");
+        require(sent, "Failed to send Ether");
+
+        uint halfETH = address(this).balance/2;
+        address[] memory path = new address[](2);
+
+        // Swap 50% ETH for tokenA
+        path[0] = address(router.WETH());
+        path[1] = address(tokenA);
+        uint[] memory amounts1 = router.swapExactETHForTokens{value: halfETH}(
+            0,
+            path,
+            address(this),
+            block.timestamp + 10
+        );
+        uint tokenAamount = amounts1[1];
+
+        // Swap 50% ETH for tokenB
+        path[0] = address(router.WETH());
+        path[1] = address(tokenB);
+        uint[] memory amounts2 = router.swapExactETHForTokens{value: halfETH}(
+            0,
+            path,
+            address(this),
+            block.timestamp + 10
+        );
+        uint tokenBamount = amounts2[1];
+
+        // Create & Send LP
+        IERC20(tokenA).approve(address(router), tokenAamount);
+        IERC20(tokenB).approve(address(router), tokenBamount);
+        (uint _tokenAadded, uint _tokenBadded, uint _lpTokensCreated) = router.addLiquidity(
+            tokenA,
+            tokenB,
+            tokenAamount,
+            tokenBamount,
+            0,
+            0,
+            msg.sender,
+            block.timestamp + 10
+        );
+
+        emit TokenLiquidityAdded(
+            uint _lpTokensCreated,
+            address tokenA,
+            address tokenB,
+            uint _tokenAadded,
+            uint _tokenBadded
+        );
     }
 
 }
