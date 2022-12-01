@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: AGPLv3                                                                                                                   
 pragma solidity 0.8.17;
 
-// exclude EccZapper from fees on ECC
-// take 50% EMPIRE, 50% ECC to make LP
-// send LP back to users
-
 interface IERC20 {
     function totalSupply() external view returns (uint256);
 
