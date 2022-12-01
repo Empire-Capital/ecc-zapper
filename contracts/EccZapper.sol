@@ -108,10 +108,7 @@ contract Ownable is Context {
 */
 contract EccZapper is Ownable {
     IEmpireRouter public router;
-    IERC20 public ecc;
-    IERC20 public empire;
 
-    event eccEmpireLiquidityAdded(uint lpTokensCreated, uint eccAdded, uint empireAdded);
     event TokenLiquidityAdded(
         uint lpTokensCreated,
         address tokenA,
@@ -128,56 +125,9 @@ contract EccZapper is Ownable {
 
     constructor (address router) {
         router = IEmpireRouter(router);
-        ecc = IERC20(0xfE06CCfAc526d141131c041fb443E5678D011c56);
-        empire = IERC20(0x2a114dBd8C97dD3d369963790FBdf0eb74AFa95F);
     }
 
     receive() external payable { }
-
-    function zapEthForEccEmpire() external payable {
-        (bool sent,) = address(this).call{value: msg.value}("");
-        require(sent, "Failed to send Ether");
-
-        uint halfETH = address(this).balance/2;
-        address[] memory path = new address[](2);
-
-        // Swap 50% ETH for ECC
-        path[0] = address(router.WETH());
-        path[1] = address(ecc);
-        uint[] memory amounts1 = router.swapExactETHForTokens{value: halfETH}(
-            0,
-            path,
-            address(this),
-            block.timestamp + 10
-        );
-        uint eccAmount = amounts1[1];
-
-        // Swap 50% ETH for EMPIRE
-        path[0] = address(router.WETH());
-        path[1] = address(empire);
-        uint[] memory amounts2 = router.swapExactETHForTokens{value: halfETH}(
-            0,
-            path,
-            address(this),
-            block.timestamp + 10
-        );
-        uint empireAmount = amounts2[1];
-
-        // Create & Send LP
-        ecc.approve(address(router), eccAmount);
-        empire.approve(address(router), empireAmount);
-        (uint _eccAdded, uint _empireAdded, uint _lpTokensCreated) = router.addLiquidity(
-            address(ecc),
-            address(empire),
-            eccAmount,
-            empireAmount,
-            0,
-            0,
-            msg.sender,
-            block.timestamp + 10
-        );
-        emit eccEmpireLiquidityAdded(_lpTokensCreated, _eccAdded, _empireAdded);
-    }
 
     function zapEthForTokenPair(address tokenA, address tokenB) external payable {
         (bool sent,) = address(this).call{value: msg.value}("");
