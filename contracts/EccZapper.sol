@@ -123,8 +123,8 @@ contract EccZapper is Ownable {
         uint ETHadded
     );
 
-    constructor (address router) {
-        router = IEmpireRouter(router);
+    constructor (address _router) {
+        router = IEmpireRouter(_router);
     }
 
     receive() external payable { }
@@ -173,11 +173,11 @@ contract EccZapper is Ownable {
         );
 
         emit TokenLiquidityAdded(
-            uint _lpTokensCreated,
-            address tokenA,
-            address tokenB,
-            uint _tokenAadded,
-            uint _tokenBadded
+            _lpTokensCreated,
+            tokenA,
+            tokenB,
+            _tokenAadded,
+            _tokenBadded
         );
     }
 
@@ -201,8 +201,7 @@ contract EccZapper is Ownable {
 
         // Create & Send LP
         IERC20(token).approve(address(router), tokenAmount);
-        empire.approve(address(router), empireAmount);
-        (uint _tokenAmount, uint _ETHamount, uint _lpTokensCreated) = router.addLiquidity
+        (uint _tokenAmount, uint _ETHamount, uint _lpTokensCreated) = router.addLiquidityETH
             {value: halfETH}(
             token,
             tokenAmount,
@@ -213,10 +212,10 @@ contract EccZapper is Ownable {
         );
 
         emit ETHLiquidityAdded(
-            uint _lpTokensCreated,
-            address token,
-            uint _tokenAamount,
-            uint _ETHamount
+            _lpTokensCreated,
+            token,
+            _tokenAmount,
+            _ETHamount
         );
     }
 
