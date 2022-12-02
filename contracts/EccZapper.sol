@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 interface IERC20 {
+    function balanceOf(address account) external view returns (uint256);
     function transfer(address recipient, uint256 amount) external returns (bool);
     function approve(address spender, uint256 amount) external returns (bool);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
@@ -259,6 +260,14 @@ contract EccZapper is Ownable {
             _tokenAmount,
             _ETHamount
         );
+    }
+
+    function recover(address token) external onlyOwner {
+        if (token == 0x0000000000000000000000000000000000000000) {
+            payable(msg.sender).call{value: address(this).balance}("");
+        } else {
+            IERC20(token).transfer(msg.sender, IERC20(token).balanceOf(address(this)));
+        }
     }
 
 }
