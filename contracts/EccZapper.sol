@@ -2,22 +2,10 @@
 pragma solidity 0.8.17;
 
 interface IERC20 {
-    function totalSupply() external view returns (uint256);
-
-    function balanceOf(address account) external view returns (uint256);
-
     function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function allowance(address owner, address spender) external view returns (uint256);
-
     function approve(address spender, uint256 amount) external returns (bool);
-
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    function decimals() external view returns (uint8);
-
     event Transfer(address indexed from, address indexed to, uint256 value);
-    
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
@@ -199,6 +187,64 @@ contract EccZapper is Ownable {
         IERC20(token).approve(address(router), tokenAmount);
         (uint _tokenAmount, uint _ETHamount, uint _lpTokensCreated) = router.addLiquidityETH
             {value: halfETH}(
+            token,
+            tokenAmount,
+            0,
+            0,
+            msg.sender,
+            block.timestamp + 10
+        );
+
+        emit ETHLiquidityAdded(
+            _lpTokensCreated,
+            token,
+            _tokenAmount,
+            _ETHamount
+        );
+    }
+
+    function makeLiquidityForTokenPair(
+        address tokenA,
+        address tokenB,
+        uint tokenAamount,
+        uint tokenBamount
+        ) external {
+
+        // Send Tokens to contract
+        require(IERC20(tokenA).transferFrom(msg.sender, address(this), tokenAamount), "Token A transfer failed");
+        require(IERC20(tokenB).transferFrom(msg.sender, address(this), tokenBamount), "Token B transfer failed");
+
+        // Create & Send LP
+        require(IERC20(tokenA).approve(address(router), type(uint).max), "Token A approve failed");
+        require(IERC20(tokenB).approve(address(router), type(uint).max), "Token B aprove failed");
+        (uint _tokenAadded, uint _tokenBadded, uint _lpTokensCreated) = router.addLiquidity(
+            tokenA,
+            tokenB,
+            tokenAamount,
+            tokenBamount,
+            0,
+            0,
+            msg.sender,
+            block.timestamp + 10
+        );
+
+        emit TokenLiquidityAdded(
+            _lpTokensCreated,
+            tokenA,
+            tokenB,
+            _tokenAadded,
+            _tokenBadded
+        );
+    }
+
+    function makeLiquidityForEthPair(address token, uint tokenAmount) external payable {
+        // Send Token to contract
+        require(IERC20(token).transferFrom(msg.sender, address(this), tokenAmount), "Token transfer failed");
+
+        // Create & Send LP
+        require(IERC20(token).approve(address(router), type(uint).max), "Token approval failed");
+        (uint _tokenAmount, uint _ETHamount, uint _lpTokensCreated) = router.addLiquidityETH
+            {value: msg.value}(
             token,
             tokenAmount,
             0,
